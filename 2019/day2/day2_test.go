@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/ianmcmahon/advent/2019/intcode"
 )
 
 type testCase struct {
@@ -21,7 +23,7 @@ var testCases = []testCase{
 func TestExamples(t *testing.T) {
 	for _, tc := range testCases {
 		fmt.Printf("trying input: %v\n", tc.input)
-		output := process(tc.input)
+		output := intcode.Process(tc.input)
 		fmt.Printf(" got: %v  expected: %v\n", output, tc.expected)
 		if !reflect.DeepEqual(output, tc.expected) {
 			t.Fail()
