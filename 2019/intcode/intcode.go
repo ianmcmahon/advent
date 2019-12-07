@@ -1,6 +1,11 @@
 package intcode
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+	"os"
+	"sync"
+)
 
 type ParamMode int
 
@@ -35,20 +40,55 @@ func iioParamModes(modes int) (a, b ParamMode, err error) {
 	return
 }
 
-func Process(input []int, userInput ...int) (memory, output []int) {
-	output = []int{}
+func Process(program []int, userInput ...int) (memory, output []int) {
+	inCh := make(chan int, 0)
+	outCh := make(chan int, 0)
+
+	wg := sync.WaitGroup{}
+
+	go func() {
+		wg.Add(1)
+		for {
+			o, more := <-outCh
+			output = append(output, o)
+			if !more {
+				break
+			}
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		for _, v := range userInput {
+			inCh <- v
+		}
+	}()
+
+	memory = Run(program, inCh, outCh, os.Stdout)
+
+	wg.Wait()
+
+	return memory, output
+}
+
+func Run(program []int, input <-chan int, output chan<- int, console io.Writer) (memory []int) {
+	memory = make([]int, len(program))
+	copy(memory, program)
+	defer close(output)
+
 	ip := 0
 	for {
-		//fmt.Printf("ip: %d, instruction: %d ", ip, input[ip])
+		// fmt.Printf("ip: %d, instruction: %d \n", ip, memory[ip])
 
-		instruction := input[ip]
+		instruction := memory[ip]
 		opcode := instruction % 100
 		paramModes := instruction / 100
 
 		switch opcode {
 		case 99:
 			// HALT
-			return input, output
+			fmt.Fprintf(console, "HALT\n")
+			return memory
 
 		case 1:
 			// ADD
@@ -57,11 +97,11 @@ func Process(input []int, userInput ...int) (memory, output []int) {
 				fmt.Printf("ip: %d instruction: %d err: %v\n", ip, instruction, err)
 			}
 			// getparam dereferences the pointers if appropriate
-			a, b := getParam(input, ip+1, am), getParam(input, ip+2, bm)
+			a, b := getParam(memory, ip+1, am), getParam(memory, ip+2, bm)
 			// output is always a pointer
-			po := input[ip+3]
+			po := memory[ip+3]
 
-			input[po] = a + b
+			memory[po] = a + b
 			ip += 4
 
 		case 2:
@@ -71,32 +111,30 @@ func Process(input []int, userInput ...int) (memory, output []int) {
 				fmt.Printf("ip: %d instruction: %d err: %v\n", ip, instruction, err)
 			}
 			// getparam dereferences the pointers if appropriate
-			a, b := getParam(input, ip+1, am), getParam(input, ip+2, bm)
+			a, b := getParam(memory, ip+1, am), getParam(memory, ip+2, bm)
 			// output is always a pointer
-			po := input[ip+3]
+			po := memory[ip+3]
 
-			input[po] = a * b
+			memory[po] = a * b
 			ip += 4
 
 		case 3:
 			// INPUT
 			// writes to the single param, so never immediate mode
-			pa := input[ip+1]
-			// shift input off from userInput array
-			if len(userInput) == 0 {
-				fmt.Printf("out of user input! submitting 0\n")
-				input[pa] = 0
-			} else {
-				input[pa], userInput = userInput[0], userInput[1:]
-			}
+			pa := memory[ip+1]
+			// block on input channel until we have input
+			fmt.Fprintf(console, "blocking on input\n")
+			memory[pa] = <-input
+			fmt.Fprintf(console, "got input %d\n", memory[pa])
 			ip += 2
 
 		case 4:
 			// OUTPUT
 			// single param can be position or immediate
-			a := getParam(input, ip+1, ParamMode(paramModes%10)) // mode shouldn't ever be > 10 but :)
-			//fmt.Printf("OUTPUT: %d\n", a)
-			output = append(output, a)
+			a := getParam(memory, ip+1, ParamMode(paramModes%10)) // mode shouldn't ever be > 10 but :)
+			fmt.Fprintf(console, "blocking on output\n")
+			output <- a
+			fmt.Fprintf(console, "sent output %d\n", a)
 			ip += 2
 
 		case 5:
@@ -106,7 +144,7 @@ func Process(input []int, userInput ...int) (memory, output []int) {
 				fmt.Printf("ip: %d instruction: %d err: %v\n", ip, instruction, err)
 			}
 			// getparam dereferences the pointers if appropriate
-			a, b := getParam(input, ip+1, am), getParam(input, ip+2, bm)
+			a, b := getParam(memory, ip+1, am), getParam(memory, ip+2, bm)
 			if a != 0 {
 				ip = b
 			} else {
@@ -120,7 +158,7 @@ func Process(input []int, userInput ...int) (memory, output []int) {
 				fmt.Printf("ip: %d instruction: %d err: %v\n", ip, instruction, err)
 			}
 			// getparam dereferences the pointers if appropriate
-			a, b := getParam(input, ip+1, am), getParam(input, ip+2, bm)
+			a, b := getParam(memory, ip+1, am), getParam(memory, ip+2, bm)
 			if a == 0 {
 				ip = b
 			} else {
@@ -134,13 +172,13 @@ func Process(input []int, userInput ...int) (memory, output []int) {
 				fmt.Printf("ip: %d instruction: %d err: %v\n", ip, instruction, err)
 			}
 			// getparam dereferences the pointers if appropriate
-			a, b := getParam(input, ip+1, am), getParam(input, ip+2, bm)
+			a, b := getParam(memory, ip+1, am), getParam(memory, ip+2, bm)
 			// output is always a pointer
-			po := input[ip+3]
+			po := memory[ip+3]
 			if a < b {
-				input[po] = 1
+				memory[po] = 1
 			} else {
-				input[po] = 0
+				memory[po] = 0
 			}
 			ip += 4
 
@@ -151,21 +189,21 @@ func Process(input []int, userInput ...int) (memory, output []int) {
 				fmt.Printf("ip: %d instruction: %d err: %v\n", ip, instruction, err)
 			}
 			// getparam dereferences the pointers if appropriate
-			a, b := getParam(input, ip+1, am), getParam(input, ip+2, bm)
+			a, b := getParam(memory, ip+1, am), getParam(memory, ip+2, bm)
 			// output is always a pointer
-			po := input[ip+3]
+			po := memory[ip+3]
 			if a == b {
-				input[po] = 1
+				memory[po] = 1
 			} else {
-				input[po] = 0
+				memory[po] = 0
 			}
 			ip += 4
 
 		default:
-			fmt.Printf("Bad opcode at instruction %d: %d\n", ip, input[ip])
-			return input, output
+			fmt.Printf("Bad opcode at instruction %d: %d\n", ip, memory[ip])
+			return memory
 		}
 	}
 
-	return input, output
+	return memory
 }

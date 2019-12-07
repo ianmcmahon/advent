@@ -16,85 +16,85 @@ type testCase struct {
 }
 
 var testCases = []testCase{
-	{[]int{1, 0, 0, 0, 99}, []int{2, 0, 0, 0, 99}, nil, []int{}},
-	{[]int{2, 3, 0, 3, 99}, []int{2, 3, 0, 6, 99}, nil, []int{}},
-	{[]int{2, 4, 4, 5, 99, 0}, []int{2, 4, 4, 5, 99, 9801}, nil, []int{}},
-	{[]int{1, 1, 1, 4, 99, 5, 6, 0, 99}, []int{30, 1, 1, 4, 2, 5, 6, 0, 99}, nil, []int{}},
-	{[]int{1002, 4, 3, 4, 33}, []int{1002, 4, 3, 4, 99}, nil, []int{}},
-	{[]int{1101, 100, -1, 4, 0}, []int{1101, 100, -1, 4, 99}, nil, []int{}},
-	{[]int{3, 0, 4, 0, 99}, []int{1, 0, 4, 0, 99}, []int{1}, []int{1}},
+	{[]int{1, 0, 0, 0, 99}, []int{2, 0, 0, 0, 99}, nil, []int{0}},
+	{[]int{2, 3, 0, 3, 99}, []int{2, 3, 0, 6, 99}, nil, []int{0}},
+	{[]int{2, 4, 4, 5, 99, 0}, []int{2, 4, 4, 5, 99, 9801}, nil, []int{0}},
+	{[]int{1, 1, 1, 4, 99, 5, 6, 0, 99}, []int{30, 1, 1, 4, 2, 5, 6, 0, 99}, nil, []int{0}},
+	{[]int{1002, 4, 3, 4, 33}, []int{1002, 4, 3, 4, 99}, nil, []int{0}},
+	{[]int{1101, 100, -1, 4, 0}, []int{1101, 100, -1, 4, 99}, nil, []int{0}},
+	{[]int{3, 0, 4, 0, 99}, []int{1, 0, 4, 0, 99}, []int{1}, []int{1, 0}},
 	{ // position mode, 1 EQ 8 == 0
 		[]int{3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8},
 		[]int{3, 9, 8, 9, 10, 9, 4, 9, 99, 0, 8},
 		[]int{1},
-		[]int{0},
+		[]int{0, 0},
 	}, { // position mode, 8 EQ 8 == 1
 		[]int{3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8},
 		[]int{3, 9, 8, 9, 10, 9, 4, 9, 99, 1, 8},
 		[]int{8},
-		[]int{1},
+		[]int{1, 0},
 	}, { // position mode, 7 LT 8 == 1
 		[]int{3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8},
 		[]int{3, 9, 7, 9, 10, 9, 4, 9, 99, 1, 8},
 		[]int{7},
-		[]int{1},
+		[]int{1, 0},
 	}, { // position mode, 8 LT 8 == 0
 		[]int{3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8},
 		[]int{3, 9, 7, 9, 10, 9, 4, 9, 99, 0, 8},
 		[]int{8},
-		[]int{0},
+		[]int{0, 0},
 	}, { // immediate mode, 1 EQ 8 = 0
 		[]int{3, 3, 1108, -1, 8, 3, 4, 3, 99},
 		[]int{3, 3, 1108, 0, 8, 3, 4, 3, 99},
 		[]int{1},
-		[]int{0},
+		[]int{0, 0},
 	}, { // immediate mode, 8 EQ 8 = 1
 		[]int{3, 3, 1108, -1, 8, 3, 4, 3, 99},
 		[]int{3, 3, 1108, 1, 8, 3, 4, 3, 99},
 		[]int{8},
-		[]int{1},
+		[]int{1, 0},
 	}, { // immediate mode, 7 LT 8 = 1
 		[]int{3, 3, 1107, -1, 8, 3, 4, 3, 99},
 		[]int{3, 3, 1107, 1, 8, 3, 4, 3, 99},
 		[]int{7},
-		[]int{1},
+		[]int{1, 0},
 	}, { // immediate mode, 8 LT 8 = 0
 		[]int{3, 3, 1107, -1, 8, 3, 4, 3, 99},
 		[]int{3, 3, 1107, 0, 8, 3, 4, 3, 99},
 		[]int{8},
-		[]int{0},
+		[]int{0, 0},
 	}, { // position mode jump test, outputs 0 for 0 input
 		[]int{3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, -1, 0, 1, 9},
 		[]int{3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, 0, 0, 1, 9},
 		[]int{0},
-		[]int{0},
+		[]int{0, 0},
 	}, { // position mode jump test, outputs 1 for nonzero input
 		[]int{3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, -1, 0, 1, 9},
 		[]int{3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, 100, 1, 1, 9},
 		[]int{100},
-		[]int{1},
+		[]int{1, 0},
 	}, { // immediate mode jump test, outputs 0 for 0 input
 		[]int{3, 3, 1105, -1, 9, 1101, 0, 0, 12, 4, 12, 99, 1},
 		[]int{3, 3, 1105, 0, 9, 1101, 0, 0, 12, 4, 12, 99, 0},
 		[]int{0},
-		[]int{0},
+		[]int{0, 0},
 	}, { // immediate mode jump test, outputs 1 for nonzero input
 		[]int{3, 3, 1105, -1, 9, 1101, 0, 0, 12, 4, 12, 99, 1},
 		[]int{3, 3, 1105, 100, 9, 1101, 0, 0, 12, 4, 12, 99, 1},
 		[]int{100},
-		[]int{1},
+		[]int{1, 0},
 	},
 }
 
 func TestExamples(t *testing.T) {
-	for _, tc := range testCases {
+	for i, tc := range testCases {
 		//fmt.Printf("trying input: %v\n", tc.input)
 		memory, output := intcode.Process(tc.input, tc.userInput...)
 		if !reflect.DeepEqual(memory, tc.expectedMem) {
-			t.Errorf(" got: %v  expected: %v\n", memory, tc.expectedMem)
+			t.Errorf("case %d: got: %v  expected: %v\n", i, memory, tc.expectedMem)
 		}
 		if !reflect.DeepEqual(output, tc.expectedOutput) {
-			t.Errorf(" got: %v  expected: %v\n", output, tc.expectedOutput)
+			t.Errorf("case %d: output got: %v  expected: %v\n", i, output, tc.expectedOutput)
 		}
 	}
 }
@@ -111,11 +111,11 @@ func TestLargerExample(t *testing.T) {
 		if the input value is equal to 8, or output 1001 if the input value is greater than 8.
 	*/
 	io := map[int][]int{
-		1:   []int{999},
-		7:   []int{999},
-		8:   []int{1000},
-		9:   []int{1001},
-		100: []int{1001},
+		1:   []int{999, 0},
+		7:   []int{999, 0},
+		8:   []int{1000, 0},
+		9:   []int{1001, 0},
+		100: []int{1001, 0},
 	}
 
 	for input, expected := range io {

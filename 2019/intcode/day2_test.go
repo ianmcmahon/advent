@@ -20,7 +20,7 @@ var testCases = []testCase{
 func TestExamples(t *testing.T) {
 	for _, tc := range testCases {
 		//fmt.Printf("trying input: %v\n", tc.input)
-		output := Process(tc.input)
+		output, _ := Process(tc.input)
 		//fmt.Printf(" got: %v  expected: %v\n", output, tc.expected)
 		if !reflect.DeepEqual(output, tc.expected) {
 			t.Fail()
